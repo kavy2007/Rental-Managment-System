@@ -13,6 +13,7 @@ def get_orders():
                 o.status, 
                 o.total_amount, 
                 DATE_FORMAT(o.created_at, '%Y-%m-%d') as date,
+                DATE_FORMAT((SELECT MAX(end_date) FROM rental_order_items WHERE order_id = o.id), '%Y-%m-%d') as return_date,
                 COALESCE(CONCAT(up.first_name, ' ', up.last_name), c.email) as customer
             FROM rental_orders o
             LEFT JOIN customers c ON o.customer_id = c.id
@@ -29,6 +30,7 @@ def get_orders():
                 "full_id": o['id'], # Full ID for links
                 "customer": o['customer'] or "Unknown",
                 "date": o['date'],
+                "return_date": o['return_date'] or "N/A",
                 "total": float(o['total_amount']),
                 "status": o['status']
             })
@@ -65,12 +67,16 @@ def create_order():
             
         customer_id = real_customer_id
             
-        total_amount = sum(item.get('price', 0) * item.get('quantity', 1) for item in items)
+        # Calculate total rental cost, security deposit, and total amount with tax
+        rental_subtotal = sum(item.get('price', 0) * item.get('quantity', 1) * item.get('duration', 1) for item in items)
+        total_deposit = sum(item.get('security_deposit', 0) * item.get('quantity', 1) for item in items)
+        tax = rental_subtotal * 0.1
+        total_amount = rental_subtotal + total_deposit + tax
         
         # Insert Order
         execute_query(
-            "INSERT INTO rental_orders (id, customer_id, status, total_amount) VALUES (%s, %s, 'Confirmed', %s)",
-            (order_id, customer_id, total_amount),
+            "INSERT INTO rental_orders (id, customer_id, status, total_amount, security_deposit) VALUES (%s, %s, 'Confirmed', %s, %s)",
+            (order_id, customer_id, total_amount, total_deposit),
             commit=True
         )
         
@@ -108,7 +114,8 @@ def get_order(order_id):
         # Get order details
         order_query = """
             SELECT 
-                o.id, o.status, o.total_amount, DATE_FORMAT(o.created_at, '%%Y-%%m-%%d') as date,
+                o.id, o.status, o.total_amount, o.security_deposit, DATE_FORMAT(o.created_at, '%%Y-%%m-%%d') as date,
+                DATE_FORMAT((SELECT MAX(end_date) FROM rental_order_items WHERE order_id = o.id), '%%Y-%%m-%%d') as return_date,
                 c.email as customer_email,
                 COALESCE(CONCAT(up.first_name, ' ', up.last_name), c.email) as customer_name
             FROM rental_orders o
@@ -138,9 +145,11 @@ def get_order(order_id):
             "id": order['id'],
             "status": order['status'],
             "total": float(order['total_amount']),
+            "security_deposit": float(order['security_deposit']),
             "date": order['date'],
             "customer_email": order['customer_email'],
             "customer_name": order['customer_name'] or order['customer_email'],
+            "return_date": order['return_date'] or "N/A",
             "items": items
         }), 200
     except Exception as e:

@@ -233,13 +233,24 @@
                 }
 
                 const cart = getCart();
-                const items = cart.map(i => ({
-                    variant_id: i.variant_id || i.id, // Using product id as variant id for simple mock
-                    quantity: i.quantity,
-                    price: i.ratePrice || i.pricePerDay,
-                    start_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-                    end_date: new Date(Date.now() + parseInt(i.duration)*24*60*60*1000).toISOString().slice(0, 19).replace('T', ' ')
-                }));
+                const items = cart.map(i => {
+                    let durationDays = parseInt(i.duration);
+                    if (i.duration.includes('Week')) {
+                        durationDays *= 7;
+                    } else if (i.duration.includes('Month')) {
+                        durationDays *= 30;
+                    }
+                    
+                    return {
+                        variant_id: i.variant_id || i.id,
+                        quantity: i.quantity,
+                        price: i.ratePrice || i.pricePerDay,
+                        start_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                        end_date: new Date(Date.now() + durationDays*24*60*60*1000).toISOString().slice(0, 19).replace('T', ' '),
+                        duration: parseInt(i.duration),
+                        security_deposit: i.securityDeposit || (i.pricePerDay * 2)
+                    };
+                });
 
                 const orderResponse = await window.RentXAPI.createOrder({
                     customer_id: user.id, // Ensure user.id exists (mocked or real)
