@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - RentFlow</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .cart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .cart-items-container {
+            background: #FFF;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+        }
+
+        .item-details {
+            flex-grow: 1;
+        }
+
+        .summary-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            height: fit-content;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .cart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
+                <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
+                <span>RentFlow</span>
+            </a>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link">Rentals</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" style="position: relative; color: var(--primary);">
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
+                    <span class="cart-badge badge-orange" style="position: absolute; top: -8px; right: -8px; font-size: 0.65rem; padding: 2px 6px; display: none;">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        <h1 class="text-2xl font-bold mt-8">Your Cart</h1>
+        
+        <div class="cart-grid">
+            <!-- Items -->
+            <div class="cart-items-container" id="cart-container">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-card">
+                <h3 class="font-bold mb-4">Order Summary</h3>
+                <div id="summary-container">
+                    <!-- Injected via JS -->
+                </div>
+                
+                <button class="btn btn-primary btn-block mt-6" onclick="processCheckout()" id="checkout-btn">
+                    Proceed to Checkout
+                </button>
+                <a href="products.html" class="btn btn-outline btn-block mt-2 text-center" style="display: block;">
+                    Continue Shopping
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCart();
+        });
+
+        function renderCart() {
+            const cart = getCart();
+            const container = document.getElementById('cart-container');
+            const summary = document.getElementById('summary-container');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-muted">Your cart is empty.</div>`;
+                summary.innerHTML = `<div class="text-center text-muted">No items to calculate.</div>`;
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            checkoutBtn.disabled = false;
+            let subtotal = 0;
+            let totalDeposit = 0;
+
+            container.innerHTML = cart.map((item, index) => {
+                const durationNum = parseInt(item.duration);
+                const rate = item.ratePrice || item.pricePerDay;
+                const itemRentalTotal = rate * durationNum * item.quantity;
+                const itemDepositTotal = item.securityDeposit * item.quantity;
+                
+                subtotal += itemRentalTotal;
+                totalDeposit += itemDepositTotal;
+
+                return `
+                    <div class="cart-item">
+                        <img src="${item.image}" class="item-image" alt="${item.name}">
+                        <div class="item-details">
+                            <h4 class="font-bold">${item.name}</h4>
+                            <div class="text-sm text-muted">Duration: ${item.duration} | Qty: ${item.quantity}</div>
+                            <div class="text-sm mt-1" style="color: var(--primary);">Deposit: ₹${itemDepositTotal}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">₹${itemRentalTotal}</div>
+                            <button class="btn btn-outline mt-2" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--status-red); color: var(--status-red);" onclick="removeItem(${index})">
+                                <i class="fa-solid fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            summary.innerHTML = `
+                <div class="summary-row">
+                    <span>Rental Subtotal</span>
+                    <span>₹${subtotal}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Security Deposit (Refundable)</span>
+                    <span>₹${totalDeposit}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (10%)</span>
+                    <span>₹${(subtotal * 0.1).toFixed(2)}</span>
+                </div>
+                <div class="summary-row mt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; font-weight: 700; font-size: 1.125rem;">
+                    <span>Total Due Today</span>
+                    <span style="color: var(--primary)">₹${(subtotal + totalDeposit + (subtotal * 0.1)).toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        function removeItem(index) {
+            const cart = getCart();
+            cart.splice(index, 1);
+            saveCart(cart);
+            renderCart();
+            showToast('Item removed from cart');
+        }
+
+        function processCheckout() {
+            window.location.href = 'checkout.html';
+        }
+    </script>
+</body>
+</html>

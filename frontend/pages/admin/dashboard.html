@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - RentFlow</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: var(--bg-main);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .sidebar-nav {
+            padding: 1rem 0;
+            flex-grow: 1;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .sidebar-link:hover, .sidebar-link.active {
+            background: var(--bg-secondary);
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+        }
+        
+        .main-content {
+            flex-grow: 1;
+            background: var(--bg-secondary);
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .kpi-card {
+            background: #FFF;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .kpi-title {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .chart-card {
+            background: #FFF;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* SPA Styles */
+        .d-none { display: none !important; }
+        .table-responsive { overflow-x: auto; }
+        .admin-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+        .admin-table th, .admin-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .admin-table th { background: var(--bg-main); font-weight: 600; color: var(--text-dark); }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+        
+        .schedule-list { list-style: none; padding: 0; }
+        .schedule-list li { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .schedule-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-box-open"></i>
+                <span>RentFlow Admin</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a onclick="switchView('dashboard', this, 'Dashboard Overview')" class="sidebar-link active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a onclick="switchView('orders', this, 'Manage Orders')" class="sidebar-link"><i class="fa-solid fa-list-check"></i> Orders</a>
+                <a onclick="switchView('invoices', this, 'Invoices')" class="sidebar-link"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices</a>
+                <a onclick="switchView('products', this, 'Product Inventory')" class="sidebar-link"><i class="fa-solid fa-boxes-stacked"></i> Products</a>
+                <a onclick="switchView('schedule', this, 'Schedule')" class="sidebar-link"><i class="fa-solid fa-calendar-days"></i> Schedule</a>
+                <a onclick="switchView('reports', this, 'Reports & Analytics')" class="sidebar-link"><i class="fa-solid fa-chart-pie"></i> Reports</a>
+            </nav>
+            <div style="padding: 1rem;">
+                <button class="btn btn-outline btn-block" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold" id="page-title">Dashboard Overview</h1>
+                <div class="user-info">
+                    <span class="text-sm font-semibold user-name-display">Admin</span>
+                </div>
+            </div>
+
+            <!-- View: Dashboard -->
+            <div id="view-dashboard" class="view-section">
+                <!-- KPIs -->
+                <div class="kpi-grid" id="kpi-container">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 class="font-bold mb-4">Revenue Overview (Mock)</h3>
+                        <canvas id="revenueChart" height="100"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3 class="font-bold mb-4">Rental Status</h3>
+                        <canvas id="statusChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Orders -->
+            <div id="view-orders" class="view-section d-none">
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View: Invoices -->
+            <div id="view-invoices" class="view-section d-none">
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Order Ref</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Date Issued</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View: Products -->
+            <div id="view-products" class="view-section d-none">
+                <div class="flex justify-end mb-4">
+                    <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price (/day)</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View: Schedule -->
+            <div id="view-schedule" class="view-section d-none">
+                <div class="bg-white p-6 rounded-md shadow-sm border" style="border-color: var(--border-color);">
+                    <h3 class="font-bold mb-4 text-lg">Upcoming Pickups & Returns</h3>
+                    <ul class="schedule-list" id="schedule-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- View: Reports -->
+            <div id="view-reports" class="view-section d-none">
+                 <div class="bg-white p-6 rounded-md shadow-sm border flex flex-col items-center justify-center py-12 text-muted" style="border-color: var(--border-color);">
+                     <i class="fa-solid fa-chart-line text-4xl mb-4 text-primary" style="opacity: 0.5;"></i>
+                     <h3 class="text-xl font-bold text-dark">Advanced Analytics Available Soon</h3>
+                     <p class="mt-2 text-center max-w-md">The full reporting suite is currently under development. Please check back in a future update.</p>
+                 </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../../js/mockData.js"></script>
+    <script src="../../js/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check auth
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user || user.role !== 'admin') {
+                // Not strictly enforced for demo
+            }
+
+            initDashboard();
+            loadOrders();
+            loadInvoices();
+            loadProducts();
+            loadSchedule();
+        });
+
+        function switchView(viewId, element, title) {
+            // Update active class on sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Update title
+            document.getElementById('page-title').textContent = title;
+
+            // Hide all sections, show target
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('d-none'));
+            document.getElementById('view-' + viewId).classList.remove('d-none');
+        }
+
+        function initDashboard() {
+            const kpis = window.RentFlowData.kpis;
+            document.getElementById('kpi-container').innerHTML = `
+                <div class="kpi-card"><div class="kpi-title">Active Rentals</div><div class="kpi-value">${kpis.activeRentals}</div></div>
+                <div class="kpi-card"><div class="kpi-title">Due Today</div><div class="kpi-value text-orange">${kpis.dueToday}</div></div>
+                <div class="kpi-card"><div class="kpi-title">Total Revenue</div><div class="kpi-value text-green">${kpis.revenue}</div></div>
+                <div class="kpi-card"><div class="kpi-title">Overdue</div><div class="kpi-value text-red">${kpis.overdue}</div></div>
+            `;
+
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Rental Revenue',
+                        data: [1200, 1900, 3000, 2500, 4200, kpis.revenue.replace(/[^0-9.-]+/g,"")],
+                        backgroundColor: '#FF7A00',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Completed', 'Cancelled'],
+                    datasets: [{
+                        data: [45, 120, 15],
+                        backgroundColor: ['#FF7A00', '#10B981', '#EF4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function getStatusBadge(status) {
+            if(status === 'Active' || status === 'Available') return `<span class="badge badge-green">${status}</span>`;
+            if(status === 'Pending' || status === 'Booked') return `<span class="badge badge-orange">${status}</span>`;
+            return `<span class="badge" style="background:#e5e7eb; color:#374151;">${status}</span>`;
+        }
+
+        function loadOrders() {
+            const orders = window.RentFlowData.orders;
+            const tbody = document.getElementById('orders-tbody');
+            tbody.innerHTML = orders.map(o => `
+                <tr>
+                    <td class="font-semibold">${o.id}</td>
+                    <td>${o.customer}</td>
+                    <td>${o.date}</td>
+                    <td class="font-semibold">₹${o.total}</td>
+                    <td>${getStatusBadge(o.status)}</td>
+                    <td><button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function loadInvoices() {
+            const orders = window.RentFlowData.orders;
+            const tbody = document.getElementById('invoices-tbody');
+            tbody.innerHTML = orders.map(o => `
+                <tr>
+                    <td class="font-semibold">INV-${o.id.split('-')[1]}</td>
+                    <td>${o.id}</td>
+                    <td>${o.customer}</td>
+                    <td class="font-semibold">₹${o.total}</td>
+                    <td>${o.date}</td>
+                    <td><button class="btn btn-outline text-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-download"></i> PDF</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function loadProducts() {
+            const products = window.RentFlowData.products;
+            const tbody = document.getElementById('products-tbody');
+            tbody.innerHTML = products.map(p => `
+                <tr>
+                    <td><img src="${p.image}" alt="${p.name}"></td>
+                    <td class="font-semibold">${p.name}</td>
+                    <td class="text-sm text-muted">${p.category}</td>
+                    <td class="font-semibold">₹${p.pricePerDay}</td>
+                    <td>${p.stock}</td>
+                    <td>${getStatusBadge(p.status)}</td>
+                    <td>
+                        <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-outline text-red" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: #EF4444;"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function loadSchedule() {
+            const orders = window.RentFlowData.orders;
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = orders.map(o => `
+                <li>
+                    <div>
+                        <div class="font-semibold">Pickup: ${o.customer}</div>
+                        <div class="text-sm text-muted">Order Ref: ${o.id} - ${o.items[0].duration}</div>
+                    </div>
+                    ${getStatusBadge(o.status)}
+                </li>
+            `).join('');
+        }
+
+    </script>
+</body>
+</html>

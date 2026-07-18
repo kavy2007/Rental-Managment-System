@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - RentFlow</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            padding: 2rem 0;
+        }
+        
+        .gallery-main {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .rental-box {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-top: 2rem;
+        }
+
+        .price-breakdown {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .price-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
+                <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
+                <span>RentFlow</span>
+            </a>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link" style="color: var(--primary);">Rentals</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" style="position: relative; color: var(--text-dark);">
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
+                    <span class="cart-badge badge-orange" style="position: absolute; top: -8px; right: -8px; font-size: 0.65rem; padding: 2px 6px; display: none;">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="mt-4">
+            <a href="products.html" class="text-muted text-sm"><i class="fa-solid fa-arrow-left"></i> Back to Catalog</a>
+        </div>
+        
+        <div class="detail-grid" id="product-detail">
+            <!-- Loading State -->
+            <div class="col-span-full text-center py-8">Loading product details...</div>
+        </div>
+    </main>
+
+    <script src="../../js/mockData.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        let currentProduct = null;
+        let selectedDuration = 1; // Default 1
+        let selectedRateType = 'day'; // 'hour', 'day', 'week'
+        let selectedVariant = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            
+            if (productId) {
+                currentProduct = window.RentFlowData.products.find(p => p.id === productId);
+                if (currentProduct) {
+                    if (currentProduct.variants && currentProduct.variants.length > 0) {
+                        selectedVariant = currentProduct.variants[0];
+                    }
+                    renderProduct();
+                } else {
+                    document.getElementById('product-detail').innerHTML = 'Product not found.';
+                }
+            } else {
+                document.getElementById('product-detail').innerHTML = 'No product ID specified.';
+            }
+        });
+
+        function renderProduct() {
+            const container = document.getElementById('product-detail');
+            
+            let ratePrice = currentProduct.pricePerDay;
+            let durationLabel = 'Days';
+            if (selectedRateType === 'hour') {
+                ratePrice = currentProduct.pricePerHour;
+                durationLabel = 'Hours';
+            } else if (selectedRateType === 'week') {
+                ratePrice = currentProduct.pricePerWeek;
+                durationLabel = 'Weeks';
+            }
+
+            const rentalCost = ratePrice * selectedDuration;
+            let variantHtml = '';
+            if (currentProduct.variants && currentProduct.variants.length > 0) {
+                variantHtml = `
+                    <div class="form-group mb-4">
+                        <label class="form-label">Select Variant</label>
+                        <select class="form-control" onchange="updateVariant(this.value)">
+                            ${currentProduct.variants.map(v => `<option value="${v}" ${selectedVariant === v ? 'selected' : ''}>${v}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = `
+                <div>
+                    <img src="${currentProduct.image}" class="gallery-main" alt="${currentProduct.name}">
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-muted">${currentProduct.brand}</span>
+                        <span class="badge ${currentProduct.status === 'Available' ? 'badge-green' : 'badge-orange'}">${currentProduct.status}</span>
+                    </div>
+                    
+                    <h1 class="text-2xl font-bold mb-2">${currentProduct.name}</h1>
+                    
+                    <div class="flex items-center gap-2 mb-4 text-sm">
+                        <i class="fa-solid fa-star" style="color: #FBBF24;"></i> ${currentProduct.rating} 
+                        <span class="text-muted ml-2">in ${currentProduct.category}</span>
+                    </div>
+                    
+                    <p class="text-muted mb-6">${currentProduct.description}</p>
+                    
+                    <div class="flex gap-4 mb-6">
+                        <div class="card p-4 text-center" style="flex: 1; cursor: pointer; ${selectedRateType === 'hour' ? 'border-color: var(--primary);' : ''}" onclick="setRateType('hour')">
+                            <div class="text-sm text-muted" ${selectedRateType === 'hour' ? 'style="color: var(--primary)"' : ''}>Per Hour</div>
+                            <div class="font-bold">₹${currentProduct.pricePerHour}</div>
+                        </div>
+                        <div class="card p-4 text-center" style="flex: 1; cursor: pointer; ${selectedRateType === 'day' ? 'border-color: var(--primary);' : ''}" onclick="setRateType('day')">
+                            <div class="text-sm text-muted" ${selectedRateType === 'day' ? 'style="color: var(--primary)"' : ''}>Per Day</div>
+                            <div class="font-bold">₹${currentProduct.pricePerDay}</div>
+                        </div>
+                        <div class="card p-4 text-center" style="flex: 1; cursor: pointer; ${selectedRateType === 'week' ? 'border-color: var(--primary);' : ''}" onclick="setRateType('week')">
+                            <div class="text-sm text-muted" ${selectedRateType === 'week' ? 'style="color: var(--primary)"' : ''}>Per Week</div>
+                            <div class="font-bold">₹${currentProduct.pricePerWeek}</div>
+                        </div>
+                    </div>
+
+                    <div class="rental-box">
+                        <h3 class="font-bold mb-4">Rental Configuration</h3>
+                        
+                        ${variantHtml}
+
+                        <div class="form-group">
+                            <label class="form-label">Rental Duration (${durationLabel})</label>
+                            <input type="number" class="form-control" value="${selectedDuration}" min="1" onchange="updateDuration(this.value)">
+                        </div>
+
+                        <div class="mt-6">
+                            <div class="price-breakdown">
+                                <span>Rental (${selectedDuration} ${durationLabel})</span>
+                                <span>₹${rentalCost}</span>
+                            </div>
+                            <div class="price-breakdown text-muted">
+                                <span>Refundable Deposit</span>
+                                <span>₹${currentProduct.securityDeposit}</span>
+                            </div>
+                            <div class="price-total">
+                                <span>Total upfront</span>
+                                <span style="color: var(--primary)">₹${rentalCost + currentProduct.securityDeposit}</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-block mt-6" 
+                                onclick="handleAddToCart()" 
+                                ${currentProduct.status !== 'Available' ? 'disabled' : ''}>
+                            ${currentProduct.status === 'Available' ? 'Add to Cart' : 'Not Available'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setRateType(type) {
+            selectedRateType = type;
+            renderProduct();
+        }
+
+        function updateVariant(val) {
+            selectedVariant = val;
+            renderProduct();
+        }
+
+        function updateDuration(val) {
+            selectedDuration = parseInt(val) || 1;
+            renderProduct();
+        }
+
+        function handleAddToCart() {
+            if (currentProduct) {
+                let durationLabel = 'Days';
+                let ratePrice = currentProduct.pricePerDay;
+                if (selectedRateType === 'hour') {
+                    durationLabel = 'Hours';
+                    ratePrice = currentProduct.pricePerHour;
+                } else if (selectedRateType === 'week') {
+                    durationLabel = 'Weeks';
+                    ratePrice = currentProduct.pricePerWeek;
+                }
+                
+                const cartItem = { 
+                    ...currentProduct, 
+                    ratePrice: ratePrice,
+                    name: selectedVariant ? `${currentProduct.name} (${selectedVariant})` : currentProduct.name
+                };
+                addToCart(cartItem, 1, `${selectedDuration} ${durationLabel}`);
+            }
+        }
+    </script>
+</body>
+</html>

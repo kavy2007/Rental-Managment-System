@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - RentFlow</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Hero Section */
+        .hero {
+            background-color: var(--bg-secondary);
+            padding: 4rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+        .hero p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem auto;
+        }
+        
+        /* Categories */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .category-card {
+            background: #FFF;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .category-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+        .category-card i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        /* Product Card Styles for Featured */
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .product-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .product-details {
+            padding: 1rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
+                <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
+                <span>RentFlow</span>
+            </a>
+            <div class="nav-links">
+                <a href="home.html" class="nav-link" style="color: var(--primary);">Home</a>
+                <a href="products.html" class="nav-link">Rentals</a>
+                <a href="#" class="nav-link">How it Works</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" style="position: relative; color: var(--text-dark);">
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
+                    <span class="cart-badge badge-orange" style="position: absolute; top: -8px; right: -8px; font-size: 0.65rem; padding: 2px 6px; display: none;">0</span>
+                </a>
+                <div class="user-menu" style="position: relative;">
+                    <button class="btn btn-outline" style="border: none; padding: 0.5rem;" onclick="logout()">
+                        <i class="fa-solid fa-user"></i> <span class="user-name-display ml-2">Account</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>Rent what you need, when you need it.</h1>
+            <p>High-quality professional gear, tools, and equipment available for hourly, daily, or weekly rental.</p>
+            <a href="products.html" class="btn btn-primary" style="font-size: 1.125rem; padding: 0.75rem 2rem;">
+                Browse Catalog
+            </a>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+        
+        <!-- Categories -->
+        <h2 class="text-2xl font-bold mb-4">Categories</h2>
+        <div class="category-grid">
+            <a href="products.html?category=electronics" class="category-card" style="text-decoration: none; color: inherit; display: block;">
+                <i class="fa-solid fa-camera"></i>
+                <div class="font-semibold">Electronics</div>
+                <div class="text-sm text-muted mt-1">₹500 - ₹5000 / day</div>
+            </a>
+            <a href="products.html?category=tools" class="category-card" style="text-decoration: none; color: inherit; display: block;">
+                <i class="fa-solid fa-hammer"></i>
+                <div class="font-semibold">Tools</div>
+                <div class="text-sm text-muted mt-1">₹200 - ₹2000 / day</div>
+            </a>
+            <a href="products.html?category=events" class="category-card" style="text-decoration: none; color: inherit; display: block;">
+                <i class="fa-solid fa-campground"></i>
+                <div class="font-semibold">Events</div>
+                <div class="text-sm text-muted mt-1">₹1000 - ₹10000 / day</div>
+            </a>
+            <a href="products.html?category=sports" class="category-card" style="text-decoration: none; color: inherit; display: block;">
+                <i class="fa-solid fa-bicycle"></i>
+                <div class="font-semibold">Sports</div>
+                <div class="text-sm text-muted mt-1">₹300 - ₹3000 / day</div>
+            </a>
+        </div>
+
+        <!-- Featured Products -->
+        <div class="flex justify-between items-center mt-8 mb-4">
+            <h2 class="text-2xl font-bold">Featured Rentals</h2>
+            <a href="products.html" class="text-sm font-semibold" style="color: var(--primary);">View All <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="product-grid" id="featured-products">
+            <!-- Populated by JS -->
+        </div>
+
+    </main>
+
+    <script src="../../js/mockData.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('featured-products');
+            const featured = window.RentFlowData.products.slice(0, 3);
+            
+            container.innerHTML = featured.map(p => `
+                <div class="card product-card">
+                    <img src="${p.image}" class="product-image" alt="${p.name}">
+                    <div class="product-details">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-sm text-muted">${p.brand}</div>
+                            <span class="badge ${p.status === 'Available' ? 'badge-green' : 'badge-orange'}">${p.status}</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">${p.name}</h3>
+                        <div class="text-sm text-muted mb-4">
+                            <i class="fa-solid fa-star" style="color: #FBBF24;"></i> ${p.rating}
+                        </div>
+                        <div class="product-price">
+                            ₹${p.pricePerDay} <span class="text-sm text-muted font-normal">/ day</span>
+                        </div>
+                        <a href="detail.html?id=${p.id}" class="btn btn-outline btn-block mt-4 text-center" style="text-decoration: none;">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        });
+    </script>
+</body>
+</html>
