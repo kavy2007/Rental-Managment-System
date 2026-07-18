@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details - RentFlow</title>
+    <title>Product Details - RentX</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -61,7 +61,7 @@
         <div class="container navbar-content">
             <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
                 <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
-                <span>RentFlow</span>
+                <span>RentX</span>
             </a>
             <div class="nav-links">
                 <a href="home.html" class="nav-link">Home</a>
@@ -88,7 +88,7 @@
         </div>
     </main>
 
-    <script src="../../js/mockData.js"></script>
+    <script src="../../js/api.js"></script>
     <script src="../../js/main.js"></script>
     <script>
         let currentProduct = null;
@@ -96,22 +96,28 @@
         let selectedRateType = 'day'; // 'hour', 'day', 'week'
         let selectedVariant = '';
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get('id');
             
             if (productId) {
-                currentProduct = window.RentFlowData.products.find(p => p.id === productId);
-                if (currentProduct) {
-                    if (currentProduct.variants && currentProduct.variants.length > 0) {
-                        selectedVariant = currentProduct.variants[0];
+                try {
+                    const products = await window.RentXAPI.getProducts();
+                    currentProduct = products.find(p => p.id === productId);
+                    if (currentProduct) {
+                        if (currentProduct.variants && currentProduct.variants.length > 0) {
+                            selectedVariant = currentProduct.variants[0];
+                        }
+                        renderProduct();
+                    } else {
+                        document.getElementById('product-detail').innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Product not found.</div>';
                     }
-                    renderProduct();
-                } else {
-                    document.getElementById('product-detail').innerHTML = 'Product not found.';
+                } catch (err) {
+                    console.error("Failed to load product", err);
+                    document.getElementById('product-detail').innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Failed to load product from server.</div>';
                 }
             } else {
-                document.getElementById('product-detail').innerHTML = 'No product ID specified.';
+                document.getElementById('product-detail').innerHTML = '<div class="col-span-full text-center py-8 text-red-500">No product ID specified.</div>';
             }
         });
 

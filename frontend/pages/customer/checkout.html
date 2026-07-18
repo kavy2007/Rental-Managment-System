@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - RentFlow</title>
+    <title>Checkout - RentX</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -62,7 +62,7 @@
         <div class="container navbar-content">
             <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
                 <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
-                <span>RentFlow</span>
+                <span>RentX</span>
             </a>
             <div class="nav-links">
                 <a href="home.html" class="nav-link">Home</a>
@@ -142,6 +142,8 @@
         </form>
     </main>
 
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="../../js/api.js"></script>
     <script src="../../js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -155,6 +157,8 @@
                 document.getElementById('co-name').value = user.name;
             }
         }
+
+        let totalAmount = 0;
 
         function renderCheckoutSummary() {
             const cart = getCart();
@@ -190,6 +194,8 @@
                 `;
             }).join('');
 
+            totalAmount = subtotal + totalDeposit + (subtotal * 0.1);
+
             summaryContainer.innerHTML = `
                 <div class="summary-row">
                     <span>Rental Subtotal</span>
@@ -205,24 +211,92 @@
                 </div>
                 <div class="summary-row mt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; font-weight: 700; font-size: 1.125rem;">
                     <span>Total Due</span>
-                    <span style="color: var(--primary)">₹${(subtotal + totalDeposit + (subtotal * 0.1)).toFixed(2)}</span>
+                    <span style="color: var(--primary)">₹${totalAmount.toFixed(2)}</span>
                 </div>
             `;
         }
 
-        function handleCheckout(e) {
+        async function handleCheckout(e) {
             e.preventDefault();
             
             const btn = document.getElementById('confirm-btn');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
             btn.disabled = true;
 
-            showToast('Order Placed Successfully!', 'success');
-            
-            setTimeout(() => {
-                localStorage.removeItem('rentflow_cart');
-                window.location.href = 'home.html';
-            }, 2000);
+            try {
+                // 1. Create order in our backend
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (!user) {
+                    showToast('Please log in first', 'error');
+                    window.location.href = '../../index.html';
+                    return;
+                }
+
+                const cart = getCart();
+                const items = cart.map(i => ({
+                    variant_id: i.variant_id || i.id, // Using product id as variant id for simple mock
+                    quantity: i.quantity,
+                    price: i.ratePrice || i.pricePerDay,
+                    start_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                    end_date: new Date(Date.now() + parseInt(i.duration)*24*60*60*1000).toISOString().slice(0, 19).replace('T', ' ')
+                }));
+
+                const orderResponse = await window.RentXAPI.createOrder({
+                    customer_id: user.id, // Ensure user.id exists (mocked or real)
+                    items: items
+                });
+
+                const rzpResponse = await window.RentXAPI.createPaymentOrder(totalAmount);
+                
+                // 3. Open Razorpay Checkout
+                const options = {
+                    "key": rzpResponse.key,
+                    "amount": rzpResponse.amount,
+                    "currency": rzpResponse.currency,
+                    "name": "RentX",
+                    "description": "Equipment Rental Payment",
+                    "order_id": rzpResponse.id,
+                    "handler": async function (response) {
+                        try {
+                            await window.RentXAPI.verifyPayment({
+                                order_id: orderResponse.order_id,
+                                amount: totalAmount,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature
+                            });
+                            
+                            showToast('Payment Successful! Order Placed.', 'success');
+                            setTimeout(() => {
+                                localStorage.removeItem('rentx_cart');
+                                window.location.href = `invoice.html?id=${orderResponse.order_id}`;
+                            }, 2000);
+                        } catch (err) {
+                            showToast('Payment verification failed', 'error');
+                        }
+                    },
+                    "prefill": {
+                        "name": user.name,
+                        "email": user.email
+                    },
+                    "theme": {
+                        "color": "#2563eb"
+                    }
+                };
+                
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response){
+                    btn.innerHTML = 'Complete Order';
+                    btn.disabled = false;
+                    showToast('Payment Failed. Try again.', 'error');
+                });
+                rzp.open();
+
+            } catch (err) {
+                btn.innerHTML = 'Complete Order';
+                btn.disabled = false;
+                showToast(err.message || 'Checkout failed', 'error');
+            }
         }
     </script>
 </body>

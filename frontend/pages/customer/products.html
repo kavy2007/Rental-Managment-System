@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rentals - RentFlow</title>
+    <title>Rentals - RentX</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -87,7 +87,7 @@
         <div class="container navbar-content">
             <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
                 <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
-                <span>RentFlow</span>
+                <span>RentX</span>
             </a>
             <div class="nav-links">
                 <a href="home.html" class="nav-link">Home</a>
@@ -154,10 +154,12 @@
 
     </main>
 
-    <script src="../../js/mockData.js"></script>
+    <script src="../../js/api.js"></script>
     <script src="../../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        let allProducts = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const initialCategory = urlParams.get('category');
             
@@ -170,7 +172,14 @@
                 });
             }
             
-            applyFilters();
+            try {
+                // Fetch products from backend
+                allProducts = await window.RentXAPI.getProducts();
+                applyFilters();
+            } catch (err) {
+                console.error("Failed to load products", err);
+                document.getElementById('product-grid').innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Failed to load products from server. Make sure the Flask backend is running.</div>';
+            }
         });
 
         function resetFilters() {
@@ -180,6 +189,8 @@
         }
 
         function applyFilters() {
+            if (!allProducts || allProducts.length === 0) return;
+
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             
             const categoryCheckboxes = document.querySelectorAll('.filter-category:checked');
@@ -193,7 +204,7 @@
                 return { min, max };
             });
 
-            let filtered = window.RentFlowData.products.filter(p => {
+            let filtered = allProducts.filter(p => {
                 const matchesSearch = p.name.toLowerCase().includes(searchTerm) || p.brand.toLowerCase().includes(searchTerm);
                 const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(p.category);
                 const matchesAvailability = !showAvailableOnly || p.status === 'Available';
@@ -219,7 +230,7 @@
             }
 
             container.innerHTML = products.map(p => `
-                <div class="card product-card">
+                <div class="card product-card" style="cursor: pointer;" onclick="window.location.href='detail.html?id=${p.id}'">
                     <img src="${p.image}" class="product-image" alt="${p.name}">
                     <div class="product-details">
                         <div class="flex justify-between items-start mb-2">
@@ -233,8 +244,11 @@
                         <div class="product-price">
                             ₹${p.pricePerDay} <span class="text-sm text-muted font-normal">/ day</span>
                         </div>
-                        <a href="detail.html?id=${p.id}" class="btn btn-primary btn-block mt-4 text-center" style="text-decoration: none; ${p.status !== 'Available' ? 'pointer-events: none; opacity: 0.5' : ''}">
-                            ${p.status === 'Available' ? 'Rent Now' : 'Currently Booked'}
+                        <div class="text-sm ${p.stock > 0 ? 'text-green' : 'text-red'} font-semibold mt-1">
+                            ${p.stock > 0 ? p.stock + ' in stock' : 'Out of Stock'}
+                        </div>
+                        <a href="detail.html?id=${p.id}" class="btn btn-primary btn-block mt-4 text-center" style="text-decoration: none; ${p.stock <= 0 ? 'pointer-events: none; opacity: 0.5' : ''}" onclick="event.stopPropagation();">
+                            ${p.stock > 0 ? 'Rent Now' : 'Out of Stock'}
                         </a>
                     </div>
                 </div>
