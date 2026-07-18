@@ -437,9 +437,9 @@ Rental Completed
 
 # 👨‍💻 Developed By
 
-**Kavy Patel**
-**Prem Patel**
-**Pankti Patel**
+**Kavy Patel**<br>
+**Prem Patel**<br>
+**Pankti Patel**<br>
 **Mahi Patel**
 
 Computer Engineering Student
