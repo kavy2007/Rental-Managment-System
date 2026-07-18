@@ -28,19 +28,24 @@
             body { background-color: white; }
             .invoice-container { box-shadow: none; padding: 0; margin: 0; max-width: 100%; }
             .no-print { display: none !important; }
+            .no-print { display: none !important; }
         }
     </style>
+    <!-- html2pdf library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="invoice-container">
         <!-- Actions -->
         <div class="flex justify-between items-center mb-6 no-print">
             <a href="home.html" class="text-primary hover-underline"><i class="fa-solid fa-arrow-left mr-2"></i>Back to Home</a>
-            <button onclick="window.print()" class="btn btn-primary"><i class="fa-solid fa-print mr-2"></i>Print Invoice</button>
+            <button onclick="downloadPDF()" class="btn btn-primary"><i class="fa-solid fa-download mr-2"></i>Download PDF</button>
         </div>
 
-        <!-- Header -->
-        <div class="invoice-header">
+        <!-- Printable Content Area -->
+        <div id="invoice-content">
+            <!-- Header -->
+            <div class="invoice-header">
             <div>
                 <img src="../../images/rentx_logo.jpg" alt="RentX Logo" class="invoice-logo mb-2">
                 <p class="text-muted text-sm">123 Tech Park, Silicon Valley<br>contact@rentx.com<br>+1 (800) 123-4567</p>
@@ -49,7 +54,8 @@
                 <h2>INVOICE</h2>
                 <div class="invoice-meta">
                     <p>Invoice #: <strong class="text-dark" id="inv-number">...</strong></p>
-                    <p>Date: <strong class="text-dark" id="inv-date">...</strong></p>
+                    <p>Order Date: <strong class="text-dark" id="inv-date">...</strong></p>
+                    <p>Return Date: <strong class="text-orange" id="inv-return-date">...</strong></p>
                     <p>Status: <span class="badge" style="background: var(--success); color: white;" id="inv-status">...</span></p>
                 </div>
             </div>
@@ -87,8 +93,12 @@
                 <span id="inv-subtotal">...</span>
             </div>
             <div class="summary-row">
-                <span class="text-muted">Tax (0%)</span>
-                <span>₹0.00</span>
+                <span class="text-muted">Security Deposit</span>
+                <span id="inv-deposit">...</span>
+            </div>
+            <div class="summary-row">
+                <span class="text-muted">Tax (10%)</span>
+                <span id="inv-tax">...</span>
             </div>
             <div class="summary-row total">
                 <span>Total Paid</span>
@@ -101,6 +111,7 @@
             <strong>ZERO LIABILITY NOTICE</strong><br>
             By accepting this invoice and renting the equipment detailed above, RentX holds <strong>Zero Liability</strong> for any injury, property damage, or loss of life resulting from the use, misuse, or malfunction of the rented equipment. The renter assumes all risks associated with the operation of the equipment and agrees to hold RentX harmless from any claims, lawsuits, or damages. Equipment must be returned in the original condition. Normal wear and tear is accepted.
         </div>
+        </div> <!-- End of invoice-content -->
     </div>
 
     <script src="../../js/main.js"></script>
@@ -121,6 +132,7 @@
                 
                 document.getElementById('inv-number').textContent = order.id.toUpperCase().substring(0, 8);
                 document.getElementById('inv-date').textContent = order.date;
+                document.getElementById('inv-return-date').textContent = order.return_date || "N/A";
                 document.getElementById('inv-status').textContent = order.status;
                 
                 document.getElementById('bill-name').textContent = order.customer_name;
@@ -144,7 +156,11 @@
                     `;
                 });
 
+                const tax = subtotal * 0.1;
+
                 document.getElementById('inv-subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+                document.getElementById('inv-deposit').textContent = `₹${(order.security_deposit || 0).toFixed(2)}`;
+                document.getElementById('inv-tax').textContent = `₹${tax.toFixed(2)}`;
                 document.getElementById('inv-total').textContent = `₹${order.total.toFixed(2)}`;
 
             } catch(e) {
@@ -152,6 +168,22 @@
                 alert("Failed to load invoice details.");
             }
         });
+
+        function downloadPDF() {
+            const element = document.getElementById('invoice-content');
+            const invNum = document.getElementById('inv-number').textContent || 'invoice';
+            
+            const opt = {
+                margin:       10,
+                filename:     `RentX-Invoice-${invNum}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // New Promise-based usage:
+            html2pdf().set(opt).from(element).save();
+        }
     </script>
 </body>
 </html>

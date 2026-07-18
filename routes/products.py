@@ -16,14 +16,15 @@ def get_products():
                 p.description as description,
                 p.status as status,
                 c.name as category,
-                b.name as brand,
+                'Generic' as brand,
                 (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image,
                 (SELECT base_price FROM product_variants WHERE product_id = p.id LIMIT 1) as pricePerDay,
+                (SELECT weekly_price FROM product_variants WHERE product_id = p.id LIMIT 1) as weeklyPrice,
+                (SELECT monthly_price FROM product_variants WHERE product_id = p.id LIMIT 1) as monthlyPrice,
                 (SELECT replacement_value FROM product_variants WHERE product_id = p.id LIMIT 1) as securityDeposit,
                 (SELECT SUM(quantity_available) FROM inventory i JOIN product_variants pv ON i.variant_id = pv.id WHERE pv.product_id = p.id) as stock
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN brands b ON p.brand_id = b.id
         """
         products_data = execute_query(query, fetchall=True)
         
@@ -37,6 +38,8 @@ def get_products():
                 "category": p["category"] or "Uncategorized",
                 "image": p["image"] or "https://via.placeholder.com/150",
                 "pricePerDay": float(p["pricePerDay"] or 0),
+                "weeklyPrice": float(p["weeklyPrice"] or 0),
+                "monthlyPrice": float(p["monthlyPrice"] or 0),
                 "securityDeposit": float(p["securityDeposit"] or 0),
                 "status": "Available" if (p["stock"] and p["stock"] > 0 and p["status"] == "Active") else "Unavailable",
                 "stock": int(p["stock"] or 0),
@@ -58,15 +61,16 @@ def get_product(product_id):
                 p.description as description,
                 p.status as status,
                 c.name as category,
-                b.name as brand,
+                'Generic' as brand,
                 (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image,
                 (SELECT base_price FROM product_variants WHERE product_id = p.id LIMIT 1) as pricePerDay,
+                (SELECT weekly_price FROM product_variants WHERE product_id = p.id LIMIT 1) as weeklyPrice,
+                (SELECT monthly_price FROM product_variants WHERE product_id = p.id LIMIT 1) as monthlyPrice,
                 (SELECT replacement_value FROM product_variants WHERE product_id = p.id LIMIT 1) as securityDeposit,
                 (SELECT SUM(quantity_available) FROM inventory i JOIN product_variants pv ON i.variant_id = pv.id WHERE pv.product_id = p.id) as stock,
                 (SELECT id FROM product_variants WHERE product_id = p.id LIMIT 1) as variant_id
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN brands b ON p.brand_id = b.id
             WHERE p.id = %s
         """
         p = execute_query(query, (product_id,), fetch=True)
@@ -81,6 +85,8 @@ def get_product(product_id):
             "category": p["category"] or "Uncategorized",
             "image": p["image"] or "https://via.placeholder.com/150",
             "pricePerDay": float(p["pricePerDay"] or 0),
+            "weeklyPrice": float(p["weeklyPrice"] or 0),
+            "monthlyPrice": float(p["monthlyPrice"] or 0),
             "securityDeposit": float(p["securityDeposit"] or 0),
             "status": "Available" if (p["stock"] and p["stock"] > 0) else "Unavailable",
             "stock": int(p["stock"] or 0),
@@ -121,8 +127,8 @@ def add_product():
         
         # 2. Insert Variant
         execute_query(
-            "INSERT INTO product_variants (id, product_id, sku, base_price, replacement_value) VALUES (%s, %s, %s, %s, %s)",
-            (variant_id, product_id, f"SKU-{product_id[:8]}", data.get('pricePerDay', 0), data.get('securityDeposit', 0)),
+            "INSERT INTO product_variants (id, product_id, sku, base_price, weekly_price, monthly_price, replacement_value) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (variant_id, product_id, f"SKU-{product_id[:8]}", data.get('pricePerDay', 0), data.get('weeklyPrice', 0), data.get('monthlyPrice', 0), data.get('securityDeposit', 0)),
             commit=True
         )
         
@@ -190,8 +196,8 @@ def update_product(product_id):
         variant = execute_query("SELECT id FROM product_variants WHERE product_id = %s LIMIT 1", (product_id,), fetch=True)
         if variant:
             execute_query(
-                "UPDATE product_variants SET base_price = %s, replacement_value = %s WHERE product_id = %s",
-                (data.get('pricePerDay', 0), data.get('securityDeposit', 0), product_id),
+                "UPDATE product_variants SET base_price = %s, weekly_price = %s, monthly_price = %s, replacement_value = %s WHERE product_id = %s",
+                (data.get('pricePerDay', 0), data.get('weeklyPrice', 0), data.get('monthlyPrice', 0), data.get('securityDeposit', 0), product_id),
                 commit=True
             )
             

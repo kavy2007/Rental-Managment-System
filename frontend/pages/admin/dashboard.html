@@ -176,7 +176,8 @@
                             <tr>
                                 <th>Order ID</th>
                                 <th>Customer</th>
-                                <th>Date</th>
+                                <th>Order Date</th>
+                                <th>Return Date</th>
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -198,6 +199,7 @@
                                 <th>Customer</th>
                                 <th>Amount</th>
                                 <th>Date Issued</th>
+                                <th>Return Date</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -277,10 +279,6 @@
                 </div>
                 <div class="flex gap-4">
                     <div class="form-group" style="flex: 1;">
-                        <label>Price / Hour (₹)</label>
-                        <input type="number" id="newProdPriceHr" class="form-control" required>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
                         <label>Price / Day (₹)</label>
                         <input type="number" id="newProdPriceDay" class="form-control" required>
                     </div>
@@ -289,8 +287,18 @@
                         <input type="number" id="newProdPriceWeek" class="form-control" required>
                     </div>
                     <div class="form-group" style="flex: 1;">
+                        <label>Price / Month (₹)</label>
+                        <input type="number" id="newProdPriceMonth" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
                         <label>Stock</label>
                         <input type="number" id="newProdStock" class="form-control" required min="0">
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Security Deposit (₹)</label>
+                        <input type="number" id="newProdSecurityDeposit" class="form-control" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -336,8 +344,22 @@
                         <input type="number" id="editProdPriceDay" class="form-control" required>
                     </div>
                     <div class="form-group" style="flex: 1;">
+                        <label>Price / Week (₹)</label>
+                        <input type="number" id="editProdPriceWeek" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price / Month (₹)</label>
+                        <input type="number" id="editProdPriceMonth" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
                         <label>Stock</label>
                         <input type="number" id="editProdStock" class="form-control" required min="0">
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Security Deposit (₹)</label>
+                        <input type="number" id="editProdSecurityDeposit" class="form-control" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -470,6 +492,7 @@
                         <td class="font-semibold">${o.id}</td>
                         <td>${o.customer || 'Customer'}</td>
                         <td>${o.date}</td>
+                        <td class="font-semibold text-orange">${o.return_date || 'N/A'}</td>
                         <td class="font-semibold">₹${o.total}</td>
                         <td>${getStatusBadge(o.status)}</td>
                         <td><button onclick="window.open('../customer/invoice.html?id=${o.full_id}', '_blank')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View Invoice</button></td>
@@ -495,6 +518,7 @@
                         <td>${o.customer || 'Customer'}</td>
                         <td class="font-semibold">₹${o.total}</td>
                         <td>${o.date}</td>
+                        <td class="font-semibold text-orange">${o.return_date || 'N/A'}</td>
                         <td><button onclick="window.open('../customer/invoice.html?id=${o.full_id}', '_blank')" class="btn btn-outline text-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-download"></i> PDF</button></td>
                     </tr>
                 `).join('');
@@ -579,10 +603,11 @@
             
             const name = document.getElementById('newProdName').value;
             const category = document.getElementById('newProdCategory').value;
-            const priceHr = parseInt(document.getElementById('newProdPriceHr').value) || 0;
             const priceDay = parseInt(document.getElementById('newProdPriceDay').value) || 0;
             const priceWeek = parseInt(document.getElementById('newProdPriceWeek').value) || 0;
+            const priceMonth = parseInt(document.getElementById('newProdPriceMonth').value) || 0;
             const stock = parseInt(document.getElementById('newProdStock').value) || 0;
+            const securityDeposit = parseInt(document.getElementById('newProdSecurityDeposit').value) || 0;
             const image = document.getElementById('newProdImage').value;
             
             const newProduct = {
@@ -590,7 +615,9 @@
                 category: category,
                 description: 'Newly added item.',
                 pricePerDay: priceDay,
-                securityDeposit: priceDay * 2,
+                weeklyPrice: priceWeek,
+                monthlyPrice: priceMonth,
+                securityDeposit: securityDeposit,
                 image: image,
                 stock: stock
             };
@@ -626,6 +653,9 @@
                 }
                 
                 document.getElementById('editProdPriceDay').value = product.pricePerDay;
+                document.getElementById('editProdPriceWeek').value = product.weeklyPrice || 0;
+                document.getElementById('editProdPriceMonth').value = product.monthlyPrice || 0;
+                document.getElementById('editProdSecurityDeposit').value = product.securityDeposit || 0;
                 document.getElementById('editProdStock').value = product.stock || 0;
                 document.getElementById('editProdImage').value = product.image || '';
                 
@@ -647,14 +677,19 @@
             const name = document.getElementById('editProdName').value;
             const category = document.getElementById('editProdCategory').value;
             const priceDay = parseInt(document.getElementById('editProdPriceDay').value) || 0;
+            const priceWeek = parseInt(document.getElementById('editProdPriceWeek').value) || 0;
+            const priceMonth = parseInt(document.getElementById('editProdPriceMonth').value) || 0;
             const stock = parseInt(document.getElementById('editProdStock').value) || 0;
+            const securityDeposit = parseInt(document.getElementById('editProdSecurityDeposit').value) || 0;
             const image = document.getElementById('editProdImage').value;
             
             const updateData = {
                 name: name,
                 category: category,
                 pricePerDay: priceDay,
-                securityDeposit: priceDay * 2,
+                weeklyPrice: priceWeek,
+                monthlyPrice: priceMonth,
+                securityDeposit: securityDeposit,
                 image: image,
                 stock: stock
             };
