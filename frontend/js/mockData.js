@@ -108,7 +108,7 @@ const MOCK_PRODUCTS = [
         brand: 'EventPro',
         category: 'Events',
         image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2I7DqKEY1IbbnyKLZVJ9RLPYTtmXTS6vCGhXEwCCNiA&s=10',
-        pricePerHour: 0,
+        pricePerHour: 500,
         pricePerDay: 1500,
         pricePerWeek: 5000,
         securityDeposit: 2000,

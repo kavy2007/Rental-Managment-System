@@ -208,7 +208,7 @@
             <!-- View: Products -->
             <div id="view-products" class="view-section d-none">
                 <div class="flex justify-end mb-4">
-                    <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</button>
+                    <button class="btn btn-primary" onclick="openAddProductModal()"><i class="fa-solid fa-plus"></i> Add Product</button>
                 </div>
                 <div class="table-responsive">
                     <table class="admin-table">
@@ -248,6 +248,44 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="width: 100%; max-width: 500px; padding: 2rem;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl">Add New Product</h3>
+                <button onclick="closeAddProductModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <form id="addProductForm" onsubmit="submitNewProduct(event)">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="newProdName" class="form-control" required>
+                </div>
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price / Hour (₹)</label>
+                        <input type="number" id="newProdPriceHr" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price / Day (₹)</label>
+                        <input type="number" id="newProdPriceDay" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price / Week (₹)</label>
+                        <input type="number" id="newProdPriceWeek" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="newProdImage" class="form-control" placeholder="https://..." required>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" class="btn btn-outline" onclick="closeAddProductModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Chart.js -->
@@ -389,6 +427,51 @@
                     ${getStatusBadge(o.status)}
                 </li>
             `).join('');
+        }
+
+        // Add Product Modal Functions
+        function openAddProductModal() {
+            document.getElementById('addProductModal').classList.remove('d-none');
+        }
+
+        function closeAddProductModal() {
+            document.getElementById('addProductModal').classList.add('d-none');
+            document.getElementById('addProductForm').reset();
+        }
+
+        function submitNewProduct(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('newProdName').value;
+            const priceHr = parseInt(document.getElementById('newProdPriceHr').value);
+            const priceDay = parseInt(document.getElementById('newProdPriceDay').value);
+            const priceWeek = parseInt(document.getElementById('newProdPriceWeek').value);
+            const image = document.getElementById('newProdImage').value;
+            
+            const newProduct = {
+                id: 'p' + (window.RentFlowData.products.length + 100),
+                name: name,
+                brand: 'Generic',
+                category: 'General',
+                image: image,
+                pricePerHour: priceHr,
+                pricePerDay: priceDay,
+                pricePerWeek: priceWeek,
+                securityDeposit: priceDay * 2,
+                status: 'Available',
+                variants: [],
+                stock: 1,
+                rating: 5.0,
+                description: 'Newly added item.'
+            };
+            
+            // Add to database
+            window.RentFlowData.products.push(newProduct);
+            
+            // Reload table and close modal
+            loadProducts();
+            closeAddProductModal();
+            alert('Product added successfully!');
         }
 
     </script>
