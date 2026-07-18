@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - RentFlow</title>
+    <title>Home - RentX</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -86,7 +86,7 @@
         <div class="container navbar-content">
             <a href="home.html" class="flex items-center gap-2" style="font-size: 1.25rem; font-weight: 700;">
                 <i class="fa-solid fa-box-open" style="color: var(--primary);"></i>
-                <span>RentFlow</span>
+                <span>RentX</span>
             </a>
             <div class="nav-links">
                 <a href="home.html" class="nav-link" style="color: var(--primary);">Home</a>
@@ -99,8 +99,8 @@
                     <span class="cart-badge badge-orange" style="position: absolute; top: -8px; right: -8px; font-size: 0.65rem; padding: 2px 6px; display: none;">0</span>
                 </a>
                 <div class="user-menu" style="position: relative;">
-                    <button class="btn btn-outline" style="border: none; padding: 0.5rem;" onclick="logout()">
-                        <i class="fa-solid fa-user"></i> <span class="user-name-display ml-2">Account</span>
+                    <button class="btn btn-outline" style="border: none; padding: 0.5rem;" onclick="openUserProfileModal()">
+                        <i class="fa-solid fa-user" id="nav-user-icon"></i> <span class="user-name-display ml-2">Account</span>
                     </button>
                 </div>
             </div>
@@ -108,11 +108,11 @@
     </nav>
 
     <!-- Hero -->
-    <section class="hero">
+    <section class="hero" style="background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('../../images/hero_bg.png'); background-size: cover; background-position: center; color: white; border-bottom: 2px solid var(--primary);">
         <div class="container">
-            <h1>Rent what you need, when you need it.</h1>
-            <p>High-quality professional gear, tools, and equipment available for hourly, daily, or weekly rental.</p>
-            <a href="products.html" class="btn btn-primary" style="font-size: 1.125rem; padding: 0.75rem 2rem;">
+            <h1 style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Rent what you need, when you need it.</h1>
+            <p style="color: #e2e8f0; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 500;">High-quality professional gear, tools, and equipment available for hourly, daily, or weekly rental.</p>
+            <a href="products.html" class="btn btn-primary" style="font-size: 1.125rem; padding: 0.75rem 2rem; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.4), 0 2px 4px -1px rgba(249, 115, 22, 0.2);">
                 Browse Catalog
             </a>
         </div>
@@ -155,18 +155,67 @@
         <div class="product-grid" id="featured-products">
             <!-- Populated by JS -->
         </div>
-
     </main>
 
-    <script src="../../js/mockData.js"></script>
+    <!-- User Profile Modal -->
+    <div id="userProfileModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);">
+        <div class="card" style="width: 100%; max-width: 450px; padding: 2.5rem; position: relative;">
+            <button onclick="closeUserProfileModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--bg-secondary); margin: 0 auto 1rem auto; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid var(--primary);">
+                    <img id="profilePreviewImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    <i id="profilePlaceholderIcon" class="fa-solid fa-user text-4xl text-muted"></i>
+                </div>
+                <h3 class="font-bold text-2xl user-name-display">Your Account</h3>
+                <p class="text-muted" id="userEmailDisplay">customer@example.com</p>
+            </div>
+            
+            <form id="userProfileForm" onsubmit="saveUserProfile(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="profileName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Profile Photo URL (Optional)</label>
+                    <input type="url" id="profilePhotoUrl" class="form-control" placeholder="https://..." onchange="updateProfilePreview()">
+                </div>
+                <div class="form-group">
+                    <label>GST Number <span class="text-sm text-muted font-normal">(Optional, for B2B)</span></label>
+                    <input type="text" id="profileGst" class="form-control" placeholder="e.g. 22AAAAA0000A1Z5">
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
     <script src="../../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('featured-products');
-            const featured = window.RentFlowData.products.slice(0, 3);
             
-            container.innerHTML = featured.map(p => `
-                <div class="card product-card">
+            // Handle User Profile Logic
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                if (user.profile_photo) {
+                    const icon = document.getElementById('nav-user-icon');
+                    if (icon) {
+                        icon.outerHTML = `<img id="nav-user-icon" src="${user.profile_photo}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; display: inline-block; vertical-align: middle;">`;
+                    }
+                }
+            }
+
+            try {
+                const products = await window.RentXAPI.getProducts();
+                const featured = products.slice(0, 3);
+                
+                container.innerHTML = featured.map(p => `
+                <div class="card product-card" style="cursor: pointer;" onclick="window.location.href='detail.html?id=${p.id}'">
                     <img src="${p.image}" class="product-image" alt="${p.name}">
                     <div class="product-details">
                         <div class="flex justify-between items-start mb-2">
@@ -180,13 +229,85 @@
                         <div class="product-price">
                             ₹${p.pricePerDay} <span class="text-sm text-muted font-normal">/ day</span>
                         </div>
-                        <a href="detail.html?id=${p.id}" class="btn btn-outline btn-block mt-4 text-center" style="text-decoration: none;">
+                        <div class="text-sm ${p.stock > 0 ? 'text-green' : 'text-red'} font-semibold mt-1">
+                            ${p.stock > 0 ? p.stock + ' in stock' : 'Out of Stock'}
+                        </div>
+                        <a href="detail.html?id=${p.id}" class="btn btn-outline btn-block mt-4 text-center" style="text-decoration: none;" onclick="event.stopPropagation();">
                             View Details
                         </a>
                     </div>
                 </div>
             `).join('');
+            } catch (err) {
+                console.error("Failed to load products", err);
+            }
         });
+
+        function openUserProfileModal() {
+            const userDataStr = localStorage.getItem('user');
+            if (userDataStr) {
+                const userData = JSON.parse(userDataStr);
+                document.getElementById('userEmailDisplay').textContent = userData.email || '';
+                document.getElementById('profileName').value = userData.name || '';
+                document.getElementById('profilePhotoUrl').value = userData.profile_photo || '';
+                document.getElementById('profileGst').value = userData.gst_no || '';
+                updateProfilePreview();
+            }
+            document.getElementById('userProfileModal').style.display = 'flex';
+        }
+
+        function closeUserProfileModal() {
+            document.getElementById('userProfileModal').style.display = 'none';
+        }
+
+        function updateProfilePreview() {
+            const url = document.getElementById('profilePhotoUrl').value;
+            const img = document.getElementById('profilePreviewImg');
+            const icon = document.getElementById('profilePlaceholderIcon');
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                icon.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                icon.style.display = 'block';
+            }
+        }
+
+        async function saveUserProfile(e) {
+            e.preventDefault();
+            const userDataStr = localStorage.getItem('user');
+            if (!userDataStr) return;
+            const userData = JSON.parse(userDataStr);
+            
+            const updateData = {
+                id: userData.id,
+                name: document.getElementById('profileName').value,
+                profile_photo: document.getElementById('profilePhotoUrl').value,
+                gst_no: document.getElementById('profileGst').value
+            };
+            
+            try {
+                await window.RentXAPI.updateProfile(updateData);
+                
+                // Update local storage
+                userData.name = updateData.name;
+                userData.profile_photo = updateData.profile_photo;
+                userData.gst_no = updateData.gst_no;
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                // Update UI elements across page
+                document.querySelectorAll('.user-name-display').forEach(el => {
+                    if (el.tagName !== 'H3') el.textContent = userData.name;
+                });
+                
+                closeUserProfileModal();
+                showToast('Profile updated successfully!');
+                window.location.reload(); // Refresh to apply photo in header
+            } catch (err) {
+                alert('Failed to update profile: ' + err.message);
+            }
+        }
     </script>
 </body>
 </html>

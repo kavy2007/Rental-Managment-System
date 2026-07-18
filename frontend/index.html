@@ -66,7 +66,7 @@
             
             <div class="logo-placeholder">
                 <i class="fa-solid fa-box-open"></i>
-                <span>RentFlow</span>
+                <span>RentX</span>
             </div>
 
             <!-- Login Form -->
@@ -75,12 +75,12 @@
                 
                 <div class="form-group" style="text-align: left;">
                     <label class="form-label">Email Address</label>
-                    <input type="email" class="form-control" placeholder="admin@rentflow.com" required>
+                    <input type="email" id="login-email" class="form-control" placeholder="admin@rentx.com" required>
                 </div>
                 
                 <div class="form-group" style="text-align: left;">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-control" placeholder="••••••••" required>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block mt-4" style="height: 44px;">
@@ -138,6 +138,7 @@
         </div>
     </div>
 
+    <script src="./js/api.js"></script>
     <script src="./js/main.js"></script>
     <script>
         function toggleForms() {
@@ -153,30 +154,51 @@
             }
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
-            // Mock authentication
-            localStorage.setItem('user', JSON.stringify({ role: 'customer', name: 'John Doe' }));
-            window.location.href = './pages/customer/home.html';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const response = await window.RentXAPI.login(email, password);
+                localStorage.setItem('user', JSON.stringify(response.user));
+                
+                if (response.user.role === 'admin') {
+                    window.location.href = './pages/admin/dashboard.html';
+                } else {
+                    window.location.href = './pages/customer/home.html';
+                }
+            } catch (err) {
+                // Handled by apiFetch showToast, but can also alert
+                console.error("Login failed:", err);
+            }
         }
 
-        function handleSignup(e) {
+        async function handleSignup(e) {
             e.preventDefault();
             
+            const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm-password').value;
-            
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-
             const firstName = document.getElementById('signup-firstname').value;
             const lastName = document.getElementById('signup-lastname').value;
             
-            // Mock sign up
-            localStorage.setItem('user', JSON.stringify({ role: 'customer', name: `${firstName} ${lastName}` }));
-            window.location.href = './pages/customer/home.html';
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            try {
+                const name = `${firstName} ${lastName}`;
+                await window.RentXAPI.register(email, password, name);
+                
+                // Auto login after signup
+                const response = await window.RentXAPI.login(email, password);
+                localStorage.setItem('user', JSON.stringify(response.user));
+                window.location.href = './pages/customer/home.html';
+            } catch (err) {
+                console.error("Signup failed:", err);
+            }
         }
     </script>
 </body>

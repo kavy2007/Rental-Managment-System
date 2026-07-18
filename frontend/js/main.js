@@ -1,4 +1,52 @@
-// Main JavaScript Utilities for RentFlow
+// Main JavaScript Utilities for RentX
+
+const API_BASE_URL = 'http://localhost:5000/api';
+
+/**
+ * Helper function for making API requests with Fetch
+ */
+async function apiFetch(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    // Default headers
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    
+    // Add auth token if available (for future use, currently we just use local storage state)
+    // const token = localStorage.getItem('token');
+    // if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const fetchOptions = {
+        ...options,
+        headers
+    };
+
+    try {
+        const response = await fetch(url, fetchOptions);
+        
+        // Handle non-JSON responses gracefully (e.g., 500 errors that return HTML)
+        const contentType = response.headers.get("content-type");
+        let data;
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            data = await response.json();
+        } else {
+            data = await response.text();
+            throw new Error(`Non-JSON response: ${data}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Something went wrong');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('API Error:', error);
+        showToast(error.message, 'error');
+        throw error;
+    }
+}
 
 // 1. Auth State Management
 function checkAuth() {
@@ -20,11 +68,11 @@ function logout() {
 
 // 2. Cart Management
 function getCart() {
-    return JSON.parse(localStorage.getItem('rentflow_cart')) || [];
+    return JSON.parse(localStorage.getItem('rentx_cart')) || [];
 }
 
 function saveCart(cart) {
-    localStorage.setItem('rentflow_cart', JSON.stringify(cart));
+    localStorage.setItem('rentx_cart', JSON.stringify(cart));
     updateCartBadge();
 }
 

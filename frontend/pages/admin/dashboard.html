@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - RentFlow</title>
+    <title>Admin Dashboard - RentX</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -123,7 +123,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <i class="fa-solid fa-box-open"></i>
-                <span>RentFlow Admin</span>
+                <span>RentX Admin</span>
             </div>
             <nav class="sidebar-nav">
                 <a onclick="switchView('dashboard', this, 'Dashboard Overview')" class="sidebar-link active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
@@ -142,7 +142,8 @@
         <main class="main-content">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold" id="page-title">Dashboard Overview</h1>
-                <div class="user-info">
+                <div class="user-info flex items-center gap-2" style="cursor: pointer;" onclick="openProfileModal()">
+                    <i class="fa-solid fa-circle-user text-xl text-primary"></i>
                     <span class="text-sm font-semibold user-name-display">Admin</span>
                 </div>
             </div>
@@ -258,9 +259,21 @@
                 <button onclick="closeAddProductModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
             <form id="addProductForm" onsubmit="submitNewProduct(event)">
-                <div class="form-group">
-                    <label>Product Name</label>
-                    <input type="text" id="newProdName" class="form-control" required>
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Product Name</label>
+                        <input type="text" id="newProdName" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Category</label>
+                        <select id="newProdCategory" class="form-control" required>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Tools">Tools</option>
+                            <option value="Events">Events</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex gap-4">
                     <div class="form-group" style="flex: 1;">
@@ -275,6 +288,10 @@
                         <label>Price / Week (₹)</label>
                         <input type="number" id="newProdPriceWeek" class="form-control" required>
                     </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Stock</label>
+                        <input type="number" id="newProdStock" class="form-control" required min="0">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Image URL</label>
@@ -288,9 +305,79 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="width: 100%; max-width: 500px; padding: 2rem;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl">Edit Product</h3>
+                <button onclick="closeEditProductModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <form id="editProductForm" onsubmit="submitEditProduct(event)">
+                <input type="hidden" id="editProdId">
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Product Name</label>
+                        <input type="text" id="editProdName" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Category</label>
+                        <select id="editProdCategory" class="form-control" required>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Tools">Tools</option>
+                            <option value="Events">Events</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price / Day (₹)</label>
+                        <input type="number" id="editProdPriceDay" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Stock</label>
+                        <input type="number" id="editProdStock" class="form-control" required min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="editProdImage" class="form-control" placeholder="https://..." required>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" class="btn btn-outline" onclick="closeEditProductModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="width: 100%; max-width: 400px; padding: 2rem; text-align: center;">
+            <div class="flex justify-end mb-2">
+                <button onclick="closeProfileModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <i class="fa-solid fa-circle-user text-6xl text-primary mb-4"></i>
+            <h3 class="font-bold text-2xl user-name-display">Admin</h3>
+            <p class="text-muted mb-6">Administrator</p>
+            
+            <div style="text-align: left; background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+                <div class="mb-2"><span class="font-semibold">Email:</span> <span id="profileEmail">admin@rentx.com</span></div>
+                <div class="mb-2"><span class="font-semibold">Role:</span> Super Admin</div>
+                <div><span class="font-semibold">Joined:</span> July 2026</div>
+            </div>
+            
+            <div class="flex gap-2 justify-center">
+                <button class="btn btn-outline" onclick="closeProfileModal()">Close</button>
+                <button class="btn btn-primary" onclick="logout()">Log Out</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../../js/mockData.js"></script>
+    <script src="../../js/api.js"></script>
     <script src="../../js/main.js"></script>
     
     <script>
@@ -321,29 +408,30 @@
             document.getElementById('view-' + viewId).classList.remove('d-none');
         }
 
-        function initDashboard() {
-            const kpis = window.RentFlowData.kpis;
-            document.getElementById('kpi-container').innerHTML = `
-                <div class="kpi-card"><div class="kpi-title">Active Rentals</div><div class="kpi-value">${kpis.activeRentals}</div></div>
-                <div class="kpi-card"><div class="kpi-title">Due Today</div><div class="kpi-value text-orange">${kpis.dueToday}</div></div>
-                <div class="kpi-card"><div class="kpi-title">Total Revenue</div><div class="kpi-value text-green">${kpis.revenue}</div></div>
-                <div class="kpi-card"><div class="kpi-title">Overdue</div><div class="kpi-value text-red">${kpis.overdue}</div></div>
-            `;
+        async function initDashboard() {
+            try {
+                const kpis = await window.RentXAPI.getKPIs();
+                document.getElementById('kpi-container').innerHTML = `
+                    <div class="kpi-card"><div class="kpi-title">Active Rentals</div><div class="kpi-value">${kpis.activeRentals}</div></div>
+                    <div class="kpi-card"><div class="kpi-title">Due Today</div><div class="kpi-value text-orange">${kpis.dueToday}</div></div>
+                    <div class="kpi-card"><div class="kpi-title">Total Revenue</div><div class="kpi-value text-green">${kpis.revenue}</div></div>
+                    <div class="kpi-card"><div class="kpi-title">Overdue</div><div class="kpi-value text-red">${kpis.overdue}</div></div>
+                `;
 
-            const ctxRev = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctxRev, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Rental Revenue',
-                        data: [1200, 1900, 3000, 2500, 4200, kpis.revenue.replace(/[^0-9.-]+/g,"")],
-                        backgroundColor: '#FF7A00',
-                        borderRadius: 4
-                    }]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
-            });
+                const ctxRev = document.getElementById('revenueChart').getContext('2d');
+                new Chart(ctxRev, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Rental Revenue',
+                            data: [1200, 1900, 3000, 2500, 4200, parseInt(kpis.revenue.replace(/[^0-9.-]+/g,"")) || 5000],
+                            backgroundColor: '#FF7A00',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
 
             const ctxStatus = document.getElementById('statusChart').getContext('2d');
             new Chart(ctxStatus, {
@@ -358,75 +446,122 @@
                 },
                 options: { responsive: true }
             });
+            } catch (err) {
+                console.error("Dashboard KPI Error:", err);
+            }
         }
 
         function getStatusBadge(status) {
             if(status === 'Active' || status === 'Available') return `<span class="badge badge-green">${status}</span>`;
-            if(status === 'Pending' || status === 'Booked') return `<span class="badge badge-orange">${status}</span>`;
+            if(status === 'Pending' || status === 'Booked' || status === 'Confirmed') return `<span class="badge badge-orange">${status}</span>`;
             return `<span class="badge" style="background:#e5e7eb; color:#374151;">${status}</span>`;
         }
 
-        function loadOrders() {
-            const orders = window.RentFlowData.orders;
-            const tbody = document.getElementById('orders-tbody');
-            tbody.innerHTML = orders.map(o => `
-                <tr>
-                    <td class="font-semibold">${o.id}</td>
-                    <td>${o.customer}</td>
-                    <td>${o.date}</td>
-                    <td class="font-semibold">₹${o.total}</td>
-                    <td>${getStatusBadge(o.status)}</td>
-                    <td><button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</button></td>
-                </tr>
-            `).join('');
+        async function loadOrders() {
+            try {
+                const orders = await window.RentXAPI.getOrders();
+                const tbody = document.getElementById('orders-tbody');
+                if (!orders || orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No recent orders found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = orders.map(o => `
+                    <tr>
+                        <td class="font-semibold">${o.id}</td>
+                        <td>${o.customer || 'Customer'}</td>
+                        <td>${o.date}</td>
+                        <td class="font-semibold">₹${o.total}</td>
+                        <td>${getStatusBadge(o.status)}</td>
+                        <td><button onclick="window.open('../customer/invoice.html?id=${o.full_id}', '_blank')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View Invoice</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function loadInvoices() {
-            const orders = window.RentFlowData.orders;
-            const tbody = document.getElementById('invoices-tbody');
-            tbody.innerHTML = orders.map(o => `
-                <tr>
-                    <td class="font-semibold">INV-${o.id.split('-')[1]}</td>
-                    <td>${o.id}</td>
-                    <td>${o.customer}</td>
-                    <td class="font-semibold">₹${o.total}</td>
-                    <td>${o.date}</td>
-                    <td><button class="btn btn-outline text-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-download"></i> PDF</button></td>
-                </tr>
-            `).join('');
+        async function loadInvoices() {
+            try {
+                const orders = await window.RentXAPI.getOrders();
+                const tbody = document.getElementById('invoices-tbody');
+                if (!orders || orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No recent invoices found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = orders.map(o => `
+                    <tr>
+                        <td class="font-semibold">INV-${o.id}</td>
+                        <td>${o.id}</td>
+                        <td>${o.customer || 'Customer'}</td>
+                        <td class="font-semibold">₹${o.total}</td>
+                        <td>${o.date}</td>
+                        <td><button onclick="window.open('../customer/invoice.html?id=${o.full_id}', '_blank')" class="btn btn-outline text-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-download"></i> PDF</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function loadProducts() {
-            const products = window.RentFlowData.products;
-            const tbody = document.getElementById('products-tbody');
-            tbody.innerHTML = products.map(p => `
-                <tr>
-                    <td><img src="${p.image}" alt="${p.name}"></td>
-                    <td class="font-semibold">${p.name}</td>
-                    <td class="text-sm text-muted">${p.category}</td>
-                    <td class="font-semibold">₹${p.pricePerDay}</td>
-                    <td>${p.stock}</td>
-                    <td>${getStatusBadge(p.status)}</td>
-                    <td>
-                        <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-outline text-red" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: #EF4444;"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+        async function loadProducts() {
+            try {
+                const products = await window.RentXAPI.getProducts();
+                const tbody = document.getElementById('products-tbody');
+                if (!products || products.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No products found. Add one!</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = products.map(p => `
+                    <tr>
+                        <td><img src="${p.image}" alt="${p.name}"></td>
+                        <td class="font-semibold">${p.name}</td>
+                        <td class="text-sm text-muted">${p.category}</td>
+                        <td class="font-semibold">₹${p.pricePerDay}</td>
+                        <td>${p.stock}</td>
+                        <td>${getStatusBadge(p.status)}</td>
+                        <td>
+                            <button class="btn btn-outline" onclick="openEditProductModal('${p.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-outline text-red" onclick="deleteProduct('${p.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: #EF4444;"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function loadSchedule() {
-            const orders = window.RentFlowData.orders;
-            const list = document.getElementById('schedule-list');
-            list.innerHTML = orders.map(o => `
-                <li>
-                    <div>
-                        <div class="font-semibold">Pickup: ${o.customer}</div>
-                        <div class="text-sm text-muted">Order Ref: ${o.id} - ${o.items[0].duration}</div>
-                    </div>
-                    ${getStatusBadge(o.status)}
-                </li>
-            `).join('');
+        async function deleteProduct(id) {
+            if (confirm("Are you sure you want to delete this product?")) {
+                try {
+                    await window.RentXAPI.deleteProduct(id);
+                    alert("Product deleted successfully!");
+                    loadProducts(); // Refresh the list
+                } catch (err) {
+                    alert("Failed to delete product: " + err.message);
+                }
+            }
+        }
+
+        async function loadSchedule() {
+            try {
+                const orders = await window.RentXAPI.getOrders();
+                const list = document.getElementById('schedule-list');
+                if (!orders || orders.length === 0) {
+                    list.innerHTML = '<li class="text-muted text-center py-4">No upcoming schedules.</li>';
+                    return;
+                }
+                list.innerHTML = orders.map(o => `
+                    <li>
+                        <div>
+                            <div class="font-semibold">Pickup: ${o.customer || 'Customer'}</div>
+                            <div class="text-sm text-muted">Order Ref: ${o.id}</div>
+                        </div>
+                        ${getStatusBadge(o.status)}
+                    </li>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         // Add Product Modal Functions
@@ -439,39 +574,115 @@
             document.getElementById('addProductForm').reset();
         }
 
-        function submitNewProduct(e) {
+        async function submitNewProduct(e) {
             e.preventDefault();
             
             const name = document.getElementById('newProdName').value;
-            const priceHr = parseInt(document.getElementById('newProdPriceHr').value);
-            const priceDay = parseInt(document.getElementById('newProdPriceDay').value);
-            const priceWeek = parseInt(document.getElementById('newProdPriceWeek').value);
+            const category = document.getElementById('newProdCategory').value;
+            const priceHr = parseInt(document.getElementById('newProdPriceHr').value) || 0;
+            const priceDay = parseInt(document.getElementById('newProdPriceDay').value) || 0;
+            const priceWeek = parseInt(document.getElementById('newProdPriceWeek').value) || 0;
+            const stock = parseInt(document.getElementById('newProdStock').value) || 0;
             const image = document.getElementById('newProdImage').value;
             
             const newProduct = {
-                id: 'p' + (window.RentFlowData.products.length + 100),
                 name: name,
-                brand: 'Generic',
-                category: 'General',
-                image: image,
-                pricePerHour: priceHr,
+                category: category,
+                description: 'Newly added item.',
                 pricePerDay: priceDay,
-                pricePerWeek: priceWeek,
                 securityDeposit: priceDay * 2,
-                status: 'Available',
-                variants: [],
-                stock: 1,
-                rating: 5.0,
-                description: 'Newly added item.'
+                image: image,
+                stock: stock
             };
             
-            // Add to database
-            window.RentFlowData.products.push(newProduct);
+            try {
+                // Add to database
+                await apiFetch('/products/', {
+                    method: 'POST',
+                    body: JSON.stringify(newProduct)
+                });
+                
+                // Reload table and close modal
+                loadProducts();
+                closeAddProductModal();
+                showToast('Product added successfully!');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function openEditProductModal(id) {
+            try {
+                const product = await window.RentXAPI.getProduct(id);
+                document.getElementById('editProdId').value = product.id;
+                document.getElementById('editProdName').value = product.name;
+                
+                const categorySelect = document.getElementById('editProdCategory');
+                const categoryExists = Array.from(categorySelect.options).some(opt => opt.value === product.category);
+                if (categoryExists) {
+                    categorySelect.value = product.category;
+                } else {
+                    categorySelect.value = "Other";
+                }
+                
+                document.getElementById('editProdPriceDay').value = product.pricePerDay;
+                document.getElementById('editProdStock').value = product.stock || 0;
+                document.getElementById('editProdImage').value = product.image || '';
+                
+                document.getElementById('editProductModal').classList.remove('d-none');
+            } catch (err) {
+                alert("Failed to load product details: " + err.message);
+            }
+        }
+
+        function closeEditProductModal() {
+            document.getElementById('editProductModal').classList.add('d-none');
+            document.getElementById('editProductForm').reset();
+        }
+
+        async function submitEditProduct(e) {
+            e.preventDefault();
             
-            // Reload table and close modal
-            loadProducts();
-            closeAddProductModal();
-            alert('Product added successfully!');
+            const id = document.getElementById('editProdId').value;
+            const name = document.getElementById('editProdName').value;
+            const category = document.getElementById('editProdCategory').value;
+            const priceDay = parseInt(document.getElementById('editProdPriceDay').value) || 0;
+            const stock = parseInt(document.getElementById('editProdStock').value) || 0;
+            const image = document.getElementById('editProdImage').value;
+            
+            const updateData = {
+                name: name,
+                category: category,
+                pricePerDay: priceDay,
+                securityDeposit: priceDay * 2,
+                image: image,
+                stock: stock
+            };
+            
+            try {
+                await window.RentXAPI.updateProduct(id, updateData);
+                loadProducts();
+                closeEditProductModal();
+                showToast('Product updated successfully!');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        function openProfileModal() {
+            // Load user data if available from local storage
+            const userDataStr = localStorage.getItem('user');
+            if (userDataStr) {
+                try {
+                    const userData = JSON.parse(userDataStr);
+                    document.getElementById('profileEmail').textContent = userData.email || 'admin@rentx.com';
+                } catch(e) {}
+            }
+            document.getElementById('profileModal').classList.remove('d-none');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('d-none');
         }
 
     </script>
