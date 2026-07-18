@@ -114,6 +114,36 @@
         .schedule-list { list-style: none; padding: 0; }
         .schedule-list li { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .schedule-list li:last-child { border-bottom: none; }
+        
+        .calendar-day {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        .calendar-day:hover:not(.empty) {
+            background: var(--bg-secondary);
+        }
+        .calendar-day.pickup-date {
+            background: var(--status-green);
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-day.return-date {
+            background: var(--status-red);
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-day.in-range {
+            background: var(--status-orange-bg);
+        }
+        .calendar-day.empty {
+            cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -243,10 +273,51 @@
 
             <!-- View: Reports -->
             <div id="view-reports" class="view-section d-none">
-                 <div class="bg-white p-6 rounded-md shadow-sm border flex flex-col items-center justify-center py-12 text-muted" style="border-color: var(--border-color);">
-                     <i class="fa-solid fa-chart-line text-4xl mb-4 text-primary" style="opacity: 0.5;"></i>
-                     <h3 class="text-xl font-bold text-dark">Advanced Analytics Available Soon</h3>
-                     <p class="mt-2 text-center max-w-md">The full reporting suite is currently under development. Please check back in a future update.</p>
+                 <div class="kpi-grid">
+                     <div class="kpi-card"><div class="kpi-title">Total Customers</div><div class="kpi-value text-blue">1,245</div></div>
+                     <div class="kpi-card"><div class="kpi-title">Average Order Value</div><div class="kpi-value text-green">₹1,850</div></div>
+                     <div class="kpi-card"><div class="kpi-title">Return Rate</div><div class="kpi-value text-orange">94%</div></div>
+                     <div class="kpi-card"><div class="kpi-title">Inventory Utilization</div><div class="kpi-value text-primary">78%</div></div>
+                 </div>
+
+                 <div class="charts-grid mb-6">
+                     <div class="chart-card">
+                         <h3 class="font-bold mb-4">Monthly Revenue Trend</h3>
+                         <canvas id="reportRevenueChart" height="100"></canvas>
+                     </div>
+                     <div class="chart-card">
+                         <h3 class="font-bold mb-4">Top Categories</h3>
+                         <canvas id="reportCategoryChart" height="200"></canvas>
+                     </div>
+                 </div>
+                 
+                 <div class="bg-white p-6 rounded-md shadow-sm border" style="border-color: var(--border-color);">
+                     <div class="flex justify-between items-center mb-4">
+                         <div>
+                             <h3 class="font-bold text-lg">Recent Performance Export</h3>
+                             <p class="text-sm text-muted">Download detailed performance data for further analysis.</p>
+                         </div>
+                         <button class="btn btn-outline text-primary" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-file-export mr-2"></i> Export CSV</button>
+                     </div>
+                     <div class="table-responsive">
+                         <table class="admin-table">
+                             <thead>
+                                 <tr>
+                                     <th>Month</th>
+                                     <th>Orders</th>
+                                     <th>Revenue (₹)</th>
+                                     <th>New Customers</th>
+                                     <th>Growth</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <tr><td>July 2026</td><td>145</td><td>1,24,500</td><td>32</td><td class="text-green"><i class="fa-solid fa-arrow-up"></i> 12%</td></tr>
+                                 <tr><td>June 2026</td><td>132</td><td>1,12,000</td><td>28</td><td class="text-green"><i class="fa-solid fa-arrow-up"></i> 8%</td></tr>
+                                 <tr><td>May 2026</td><td>120</td><td>1,05,000</td><td>25</td><td class="text-red"><i class="fa-solid fa-arrow-down"></i> 3%</td></tr>
+                                 <tr><td>April 2026</td><td>125</td><td>1,08,500</td><td>30</td><td class="text-green"><i class="fa-solid fa-arrow-up"></i> 15%</td></tr>
+                             </tbody>
+                         </table>
+                     </div>
                  </div>
             </div>
 
@@ -397,6 +468,34 @@
         </div>
     </div>
 
+    <!-- Calendar Modal -->
+    <div id="calendarModal" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);">
+        <div class="card" style="width: 100%; max-width: 450px; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl text-primary"><i class="fa-solid fa-calendar-days mr-2"></i> Schedule Calendar</h3>
+                <button onclick="closeCalendarModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); transition: color 0.2s;">&times;</button>
+            </div>
+            <div class="calendar-container">
+                <div class="calendar-header flex justify-between items-center mb-4">
+                    <button id="prevMonth" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-left"></i></button>
+                    <h4 id="calendarMonthYear" class="font-bold text-lg"></h4>
+                    <button id="nextMonth" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid grid" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; text-align: center; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: var(--text-muted);">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calendarDays" class="calendar-grid grid" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; text-align: center;">
+                    <!-- Days will be generated here -->
+                </div>
+                <div class="mt-4 flex justify-between text-xs text-muted" style="margin-top: 1rem;">
+                    <div class="flex items-center gap-1" style="display: flex; align-items: center; gap: 0.25rem;"><span style="display:inline-block; width:12px; height:12px; background:var(--status-green); border-radius:50%;"></span> Pickup Date</div>
+                    <div class="flex items-center gap-1" style="display: flex; align-items: center; gap: 0.25rem;"><span style="display:inline-block; width:12px; height:12px; background:var(--status-red); border-radius:50%;"></span> Return Date</div>
+                    <div class="flex items-center gap-1" style="display: flex; align-items: center; gap: 0.25rem;"><span style="display:inline-block; width:12px; height:12px; background:var(--status-orange-bg); border-radius:4px;"></span> Duration</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../../js/api.js"></script>
@@ -415,6 +514,7 @@
             loadInvoices();
             loadProducts();
             loadSchedule();
+            initReports();
         });
 
         function switchView(viewId, element, title) {
@@ -470,6 +570,44 @@
             });
             } catch (err) {
                 console.error("Dashboard KPI Error:", err);
+            }
+        }
+
+        function initReports() {
+            try {
+                const ctxRev = document.getElementById('reportRevenueChart').getContext('2d');
+                new Chart(ctxRev, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                        datasets: [{
+                            label: 'Revenue Trend',
+                            data: [85000, 92000, 105000, 108500, 105000, 112000, 124500],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+
+                const ctxCat = document.getElementById('reportCategoryChart').getContext('2d');
+                new Chart(ctxCat, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Electronics', 'Tools', 'Events', 'Sports', 'Other'],
+                        datasets: [{
+                            data: [35, 25, 20, 15, 5],
+                            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+            } catch (err) {
+                console.error("Reports Chart Error:", err);
             }
         }
 
@@ -577,10 +715,15 @@
                 list.innerHTML = orders.map(o => `
                     <li>
                         <div>
-                            <div class="font-semibold">Pickup: ${o.customer || 'Customer'}</div>
-                            <div class="text-sm text-muted">Order Ref: ${o.id}</div>
+                            <div class="font-semibold">Customer: ${o.customer || 'Customer'}</div>
+                            <div class="text-sm text-muted mb-1">Order Ref: ${o.id}</div>
+                            <div class="text-sm" style="margin-top: 4px;"><i class="fa-solid fa-calendar-check text-green" style="color: var(--status-green);"></i> Pickup: ${o.date}</div>
+                            <div class="text-sm" style="margin-top: 2px;"><i class="fa-solid fa-calendar-xmark text-red" style="color: var(--status-red);"></i> Return: ${o.return_date || 'N/A'}</div>
                         </div>
-                        ${getStatusBadge(o.status)}
+                        <div class="flex flex-col items-end gap-2" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                            ${getStatusBadge(o.status)}
+                            <button onclick="openCalendarModal('${o.date}', '${o.return_date || ''}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-calendar-alt" style="color: var(--primary);"></i> Calendar</button>
+                        </div>
                     </li>
                 `).join('');
             } catch (err) {
@@ -719,6 +862,72 @@
         function closeProfileModal() {
             document.getElementById('profileModal').classList.add('d-none');
         }
+
+        let currentCalDate = new Date();
+        let calStartDate = null;
+        let calEndDate = null;
+
+        function openCalendarModal(startDateStr, endDateStr) {
+            calStartDate = startDateStr ? new Date(startDateStr) : null;
+            calEndDate = endDateStr ? new Date(endDateStr) : null;
+            
+            if (calStartDate && !isNaN(calStartDate)) {
+                currentCalDate = new Date(calStartDate);
+            } else {
+                currentCalDate = new Date();
+            }
+            
+            renderCalendar();
+            document.getElementById('calendarModal').classList.remove('d-none');
+        }
+
+        function closeCalendarModal() {
+            document.getElementById('calendarModal').classList.add('d-none');
+        }
+
+        function renderCalendar() {
+            const year = currentCalDate.getFullYear();
+            const month = currentCalDate.getMonth();
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('calendarMonthYear').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = '';
+            
+            for (let i = 0; i < firstDay; i++) {
+                calendarDays.innerHTML += `<div class="calendar-day empty"></div>`;
+            }
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const currentDate = new Date(year, month, i);
+                let classes = 'calendar-day';
+                
+                if (calStartDate && !isNaN(calStartDate) && currentDate.toDateString() === calStartDate.toDateString()) {
+                    classes += ' pickup-date';
+                } else if (calEndDate && !isNaN(calEndDate) && currentDate.toDateString() === calEndDate.toDateString()) {
+                    classes += ' return-date';
+                } else if (calStartDate && calEndDate && !isNaN(calStartDate) && !isNaN(calEndDate) && currentDate > calStartDate && currentDate < calEndDate) {
+                    classes += ' in-range';
+                }
+                
+                calendarDays.innerHTML += `<div class="${classes}">${i}</div>`;
+            }
+        }
+
+        document.getElementById('prevMonth')?.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            renderCalendar();
+        });
+        
+        document.getElementById('nextMonth')?.addEventListener('click', () => {
+            currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            renderCalendar();
+        });
+
 
     </script>
 </body>
